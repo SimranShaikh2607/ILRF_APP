@@ -227,36 +227,53 @@ elif choice == "Login":
         st.subheader("Processed Data")
         st.write(data)
 
-        columns = st.multiselect("Select Features", data.columns[2:])
-        target = st.selectbox("Select Target Variable", data.columns)
+        # ------ Convert categorical columns FIRST -------
+data = pd.get_dummies(data, drop_first=True)
 
-        X = data[columns]
-        y = data[target]
+# st.subheader("Processed Data (After Encoding)")
+# st.write(data)
 
-        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
+# ------ Now select features and target ----------
+columns = st.multiselect("Select Features", data.columns)
+target = st.selectbox("Select Target Variable", data.columns)
 
-        model = RandomForestRegressor()
-        model.fit(X_train,y_train)
-        y_pred = model.predict(X_test)
+# ------ Safety check ----------
+if target not in data.columns:
+    st.error(f"Target column '{target}' not found after processing")
+    st.stop()
 
-        st.subheader("Model Performance")
-        st.write("R2 Score:", r2_score(y_test,y_pred))
-        st.write("MSE:", mean_squared_error(y_test,y_pred))
-        st.write("MAE:", mean_absolute_error(y_test,y_pred))
+# ------ Use selected features ----------
+if columns:
+    X = data[columns]
+else:
+    X = data.drop(target, axis=1)
 
-        fig,ax = plt.subplots()
-        ax.plot(y_test.values,label="Actual")
-        ax.plot(y_pred,label="Predicted")
-        ax.legend()
-        st.pyplot(fig)
+y = data[target]
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
+
+model = RandomForestRegressor()
+model.fit(X_train,y_train)
+y_pred = model.predict(X_test)
+
+st.subheader("Model Performance")
+st.write("R2 Score:", r2_score(y_test,y_pred))
+st.write("MSE:", mean_squared_error(y_test,y_pred))
+st.write("MAE:", mean_absolute_error(y_test,y_pred))
+
+fig,ax = plt.subplots()
+ax.plot(y_test.values,label="Actual")
+ax.plot(y_pred,label="Predicted")
+ax.legend()
+st.pyplot(fig)
 
         # -------- USER INPUT --------
 
-        st.subheader("Predict Next Year Literacy Rate")
+st.subheader("Predict Next Year Literacy Rate")
 
-        user_input = st.text_input("Enter feature values separated by commas")
+user_input = st.text_input("Enter feature values separated by commas")
 
-        if st.button("Predict"):
+if st.button("Predict"):
             values = list(map(float,user_input.split(",")))
             test_df = pd.DataFrame([values],columns=columns)
             prediction = model.predict(test_df)
