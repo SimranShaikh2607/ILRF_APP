@@ -20,25 +20,105 @@ st.set_page_config(
     layout="wide"
 )
 
+# ---------------- CLEAN PROFESSIONAL DARK UI ----------------
+
 st.markdown("""
-<meta name="description" content="Machine Learning based Literacy Rate Forecasting System for Indian States">
-<meta name="keywords" content="Machine Learning, Literacy Rate, India, Forecasting, Streamlit">
-<meta name="author" content="Simran Shaikh">
-""", unsafe_allow_html=True)
-
-# ---------------- BACKGROUND ----------------
-
-st.markdown(
-"""
 <style>
-.stApp {
-    background-image: url("https://wallpaperboat.com/wp-content/uploads/2019/10/free-website-background-01.jpg");
-    background-size: cover;
+
+/* ---------- BASE ---------- */
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: #111827;
+    color: #e5e7eb;
+    font-family: 'Segoe UI', sans-serif;
 }
+
+/* ---------- LAYOUT ---------- */
+.main, .block-container {
+    background: transparent !important;
+    padding: 2rem 3rem;
+}
+
+/* ---------- TITLE ---------- */
+h1 {
+    text-align: left;
+    font-size: 28px;
+    font-weight: 600;
+    color: #f9fafb;
+    margin-bottom: 10px;
+}
+
+/* ---------- HEADINGS ---------- */
+h2, h3 {
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+/* ---------- SIDEBAR ---------- */
+section[data-testid="stSidebar"] {
+    background: #0b1220;
+    border-right: 1px solid #1f2937;
+}
+
+/* ---------- SIMPLE SECTIONS ---------- */
+div[data-testid="stVerticalBlock"] > div {
+    padding: 12px 0;
+    border-bottom: 1px solid #1f2937;
+}
+
+/* ---------- BUTTON ---------- */
+.stButton>button {
+    background: #374151;
+    color: #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 12px;
+    border: 1px solid #4b5563;
+    font-size: 14px;
+}
+
+.stButton>button:hover {
+    background: #4b5563;
+}
+
+/* ---------- INPUT ---------- */
+.stTextInput>div>div>input {
+    background-color: #020617;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+/* ---------- SELECT ---------- */
+.stSelectbox>div>div {
+    background-color: #020617;
+    color: #e5e7eb;
+    border: 1px solid #374151;
+    border-radius: 6px;
+}
+
+/* ---------- FILE UPLOADER ---------- */
+.stFileUploader {
+    border: 1px dashed #374151;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+/* ---------- SUCCESS / ERROR ---------- */
+.stSuccess {
+    color: #22c55e;
+}
+
+.stError {
+    color: #ef4444;
+}
+
+/* ---------- REMOVE HEADER / FOOTER ---------- */
+header, footer {
+    background: transparent !important;
+}
+
 </style>
-""",
-unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 # ---------------- DATABASE ----------------
 
@@ -54,8 +134,7 @@ def add_userdata(username,email,password):
 
 def login_user(email,password):
     c.execute('SELECT * FROM users WHERE email=? AND password=?',(email,password))
-    data = c.fetchall()
-    return data
+    return c.fetchall()
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -70,7 +149,6 @@ if "logged_in" not in st.session_state:
 # ---------------- HEADER ----------------
 
 st.title("📊 Indian Literacy Rate Forecasting System")
-st.subheader("Machine Learning Based Prediction of Literacy Rates in Indian States")
 
 # ---------------- MENU ----------------
 
@@ -80,25 +158,20 @@ choice = st.sidebar.selectbox("Menu",menu)
 # ---------------- HOME ----------------
 
 if choice == "Home":
-
     st.write("""
     ### Welcome
-
-    This system forecasts literacy rates for Indian states using Machine Learning models.
+    Forecast literacy rates using Machine Learning models.
 
     **Models Implemented**
     - Linear Regression
     - Random Forest
     - Decision Tree
     - Gradient Boosting
-
-    Upload your dataset and evaluate model performance interactively.
     """)
 
 # ---------------- SIGNUP ----------------
 
 elif choice == "Signup":
-
     st.subheader("Create Account")
 
     new_user = st.text_input("Username")
@@ -106,11 +179,8 @@ elif choice == "Signup":
     new_password = st.text_input("Password",type='password')
 
     if st.button("Signup"):
-
         add_userdata(new_user,new_email,hash_password(new_password))
-
         st.success("Account Created Successfully")
-        st.info("Go to Login Menu")
 
 # ---------------- LOGIN ----------------
 
@@ -122,156 +192,75 @@ elif choice == "Login":
     password = st.text_input("Password",type='password')
 
     if st.button("Login"):
-
         result = login_user(email,hash_password(password))
 
         if result:
             st.session_state.logged_in = True
             st.success("Login Successful")
-
         else:
             st.error("Invalid Email or Password")
 
-    # -------- AFTER LOGIN --------
+    if not st.session_state.logged_in:
+        st.warning("Please login first to access prediction")
+        st.stop()
 
-    if st.session_state.logged_in:
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
 
-        st.sidebar.success("Logged In")
+    # ---------------- PREDICTION ----------------
 
-        if st.sidebar.button("Logout"):
-            st.session_state.logged_in = False
-            st.rerun()
+    st.header("Literacy Rate Prediction")
 
-        page = st.sidebar.radio("Navigation",["Dashboard","Prediction"])
+    data_file = st.file_uploader("Upload CSV file", type=["csv"])
 
-        # -------- DASHBOARD --------
+    if data_file is not None:
 
-        if page == "Dashboard":
+        data = pd.read_csv(data_file)
 
-            st.header("Dataset Dashboard")
+        st.subheader("Dataset Preview")
+        st.write(data)
 
-            data_file = st.file_uploader("Upload Dataset",type=["csv"])
+        data.replace("na", np.nan, inplace=True)
+        data.dropna(inplace=True)
 
-            if data_file is not None:
+        st.subheader("Processed Data")
+        st.write(data)
 
-                data = pd.read_csv(data_file)
+        columns = st.multiselect("Select Features", data.columns[2:])
+        target = st.selectbox("Select Target Variable", data.columns)
 
-                st.subheader("Dataset Preview")
-                st.dataframe(data)
+        X = data[columns]
+        y = data[target]
 
-                st.subheader("Dataset Statistics")
-                st.write(data.describe())
+        X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
 
-                st.subheader("Numeric Feature Visualization")
-                st.bar_chart(data.select_dtypes(include=np.number))
+        model = RandomForestRegressor()
+        model.fit(X_train,y_train)
+        y_pred = model.predict(X_test)
 
-        # -------- PREDICTION --------
+        st.subheader("Model Performance")
+        st.write("R2 Score:", r2_score(y_test,y_pred))
+        st.write("MSE:", mean_squared_error(y_test,y_pred))
+        st.write("MAE:", mean_absolute_error(y_test,y_pred))
 
-        if page == "Prediction":
+        fig,ax = plt.subplots()
+        ax.plot(y_test.values,label="Actual")
+        ax.plot(y_pred,label="Predicted")
+        ax.legend()
+        st.pyplot(fig)
 
-            st.header("Literacy Rate Prediction")
+        # -------- USER INPUT --------
 
-            data_file = st.file_uploader("Upload CSV file",type=["csv"])
+        st.subheader("Predict Next Year Literacy Rate")
 
-            if data_file is not None:
+        user_input = st.text_input("Enter feature values separated by commas")
 
-                data = pd.read_csv(data_file)
-
-                st.subheader("Dataset Preview")
-                st.write(data)
-
-                data.replace("na",np.nan,inplace=True)
-                data.dropna(inplace=True)
-
-                st.subheader("Processed Data")
-                st.write(data)
-
-                column_options = list(data.columns[2:])
-                columns = st.multiselect("Select Features",options=column_options,default=column_options[:6])
-
-                target = st.selectbox("Select Target Variable",data.columns)
-
-                X = data[columns]
-                y = data[target]
-
-                X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)
-
-                models = {
-                    "Linear Regression":LinearRegression(),
-                    "Random Forest":RandomForestRegressor(),
-                    "Decision Tree":DecisionTreeRegressor(),
-                    "Gradient Boosting":GradientBoostingRegressor()
-                }
-
-                model_choice = st.selectbox("Select Model",list(models.keys()))
-
-                model = models[model_choice]
-
-                model.fit(X_train,y_train)
-
-                y_pred = model.predict(X_test)
-
-                st.subheader("Model Performance")
-
-                st.write("R2 Score:",r2_score(y_test,y_pred))
-                st.write("MSE:",mean_squared_error(y_test,y_pred))
-                st.write("MAE:",mean_absolute_error(y_test,y_pred))
-
-                fig,ax = plt.subplots()
-
-                ax.plot(y_test.values,label="Actual")
-                ax.plot(y_pred,label="Predicted")
-                ax.legend()
-
-                st.pyplot(fig)
-
-                # -------- MODEL COMPARISON --------
-
-                st.subheader("Model Accuracy Comparison")
-
-                scores = {}
-
-                for name,m in models.items():
-
-                    m.fit(X_train,y_train)
-
-                    pred = m.predict(X_test)
-
-                    scores[name] = r2_score(y_test,pred)
-
-                st.bar_chart(scores)
-
-                # -------- USER INPUT PREDICTION --------
-
-                st.subheader("Predict Next Year Literacy Rate")
-
-                user_input = st.text_input("Enter feature values separated by commas")
-
-                if st.button("Predict"):
-
-                    values = list(map(float,user_input.split(",")))
-
-                    test_df = pd.DataFrame([values],columns=columns)
-
-                    prediction = model.predict(test_df)
-
-                    st.success(f"Predicted Literacy Rate: {prediction[0]:.2f}%")
-
-                # -------- DOWNLOAD REPORT --------
-
-                result_df = pd.DataFrame({
-                    "Actual":y_test,
-                    "Predicted":y_pred
-                })
-
-                csv = result_df.to_csv(index=False)
-
-                st.download_button(
-                    label="Download Prediction Report",
-                    data=csv,
-                    file_name="prediction_report.csv",
-                    mime="text/csv"
-                )
+        if st.button("Predict"):
+            values = list(map(float,user_input.split(",")))
+            test_df = pd.DataFrame([values],columns=columns)
+            prediction = model.predict(test_df)
+            st.success(f"Predicted Literacy Rate: {prediction[0]:.2f}%")
 
 # ---------------- ABOUT ----------------
 
